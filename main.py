@@ -1,11 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 
 class UserIn(BaseModel):
     name: str
-    username: str
+    username: str = Field(min_length=3)
     email: str
 
 app = FastAPI()
@@ -82,3 +82,11 @@ def tambah_pengguna(user: UserIn):
     }
     users_db.append(pengguna_baru)
     return pengguna_baru
+
+@app.delete("/users/{user_id}")
+def hapus_pengguna(user_id: int):
+    for user in users_db:
+        if user["id"] == user_id:
+            users_db.remove(user)
+            return {"pesan": "Pengguna dihapus"}
+    raise HTTPException(status_code=404, detail="Pengguna tidak ditemukan")
