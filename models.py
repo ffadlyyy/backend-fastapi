@@ -12,6 +12,12 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(100))
     orders: Mapped[list["Order"]] = relationship(back_populates="user")
     saldo: Mapped[int] = mapped_column(server_default=text("0"))
+    password_hash: Mapped[str] = mapped_column(
+        String(255), server_default=""
+    )
+    role: Mapped[str] = mapped_column(
+        String(20), server_default="user"
+    )
     orders: Mapped[list["Order"]] = relationship(back_populates="user")
 
 class Order(Base):
