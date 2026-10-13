@@ -1,3 +1,4 @@
+import logging
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -8,11 +9,13 @@ from sqlalchemy.orm import Session
 
 import models
 import schemas
+
 from config import TOKEN_MENIT
 from database import get_db
 from limiter import limiter
-from security import buat_token, hash_password, verify_password
+from security import HASH_DUMMY, buat_token, hash_password, verify_password
 
+log = logging.getLogger("uvicorn.error")
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
@@ -21,7 +24,12 @@ def cek_kredensial(
 ) -> models.User:
     stmt = select(models.User).where(models.User.username == username)
     user = db.scalars(stmt).first()
-    if user is None or not verify_password(password, user.password_hash):
+    hash_tersimpan = user.password_hash if user else ""
+    # selalu jalankan bcrypt supaya waktu respons tidak membocorkan
+    # apakah username ada atau tidak
+    benar = verify_password(password, hash_tersimpan or HASH_DUMMY)
+    if user is None or not hash_tersimpan or not benar:
+        log.warning("Login gagal username=%r", username)
         raise HTTPException(
             status_code=401,
             detail="Username atau password salah",
